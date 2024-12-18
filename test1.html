@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application de Diagrammes UML</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #uml-canvas {
+            border: 1px solid #ccc;
+            background-color: white;
+            width: 800px;
+            height: 600px;
+        }
+        .uml-element {
+            padding: 10px;
+            margin: 5px;
+            background-color: lightgray;
+            border: none;
+            cursor: pointer;
+        }
+        #code-output {
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            width: 800px;
+            height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar left-sidebar">
+            <h2>Éléments UML</h2>
+            <button class="uml-element" data-type="Classe">Classe</button>
+            <button class="uml-element" data-type="Association">Association</button>
+            <button class="uml-element" data-type="AssociationSimple">Association Simple</button>
+            <button class="uml-element" data-type="Agrégation">Agrégation</button>
+            <button class="uml-element" data-type="Composition">Composition</button>
+            <button class="uml-element" data-type="Héritage">Héritage</button>
+            <button class="uml-element" data-type="Supprimer">Supprimer</button>
+        </aside>
+        
+        <main class="diagram-container">
+            <h2>Zone de Diagramme UML</h2>
+            <div id="uml-canvas"></div>
+            <h2>Code Généré</h2>
+            <div id="code-output"></div>
+        </main>
+        
+        <aside class="sidebar right-sidebar">
+            <h2>Propriétés</h2>
+            <div class="properties">
+                <label for="class-name">Nom de la classe :</label>
+                <input type="text" id="class-name" placeholder="Entrez le nom">
+                
+                <div id="attributes-section">
+                    <h3>Attributs</h3>
+                    <button type="button" class="add-attribute-btn" onclick="addAttribute()">Ajouter un attribut</button>
+
+                    <div id="attributes-container">
+                        <!-- Les nouveaux attributs seront ajoutés ici -->
+                    </div>
+                </div>
+                
+                <div id="methods-section">
+                    <h3>Méthodes</h3>
+                    <button type="button" class="add-method-btn" onclick="addMethod()">Ajouter une méthode</button>
+                    <div id="methods-container">
+                        <!-- Les nouvelles méthodes seront ajoutées ici -->
+                    </div>
+                </div>
+        
+                <button class="export-image-btn">Exporter l'image</button>
+                <button class="generate-code-btn">Générer le Code</button>
+            </div>
+        </aside>
+        
+        
+    </div>
+
+    <script src="mxgraph/js/mxClient.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+      function addAttribute() {
+            const container = document.getElementById('attributes-container');
+            const attributeDiv = document.createElement('div');
+            attributeDiv.classList.add('attribute-item');
+            
+            attributeDiv.innerHTML = `
+                <label>Nom de l'attribut :</label>
+                <input type="text" placeholder="Nom de l'attribut">
+                
+                <label>Type :</label>
+                <select>
+                    <option value="String">String</option>
+                    <option value="int">int</option>
+                    <option value="float">float</option>
+                    <option value="double">double</option>
+                    <option value="bool">bool</option>
+                    <option value="date">date</option>
+                </select>
+                
+                <label>Visibilité :</label>
+                <select>
+                    <option value="+">Public</option>
+                    <option value="-">Private</option>
+                    <option value="#">Protected</option>
+                </select>
+                
+                <button type="button" onclick="removeElement(this)">Supprimer</button>
+            `;
+            
+            container.appendChild(attributeDiv);
+        }
+
+        function addMethod() {
+            const container = document.getElementById('methods-container');
+            const methodDiv = document.createElement('div');
+            methodDiv.classList.add('method-item');
+            
+            methodDiv.innerHTML = `
+                <label>Nom de la méthode :</label>
+                <input type="text" placeholder="Nom de la méthode">
+                
+                <label>Type de retour :</label>
+                <select>
+                    <option value="void">void</option>
+                    <option value="String">String</option>
+                    <option value="int">int</option>
+                    <option value="bool">bool</option>
+                </select>
+                
+                <label>Visibilité :</label>
+                <select>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                    <option value="protected">Protected</option>
+                </select>
+                
+                <button type="button" onclick="removeElement(this)">Supprimer</button>
+            `;
+            
+            container.appendChild(methodDiv);
+        }
+
+        function removeElement(button) {
+            button.parentElement.remove();
+        }
+
+        // Initialisation de mxGraph
+        const container = document.getElementById('uml-canvas');
+        const graph = new mxGraph(container);
+        const umlParent = graph.getDefaultParent();
+        graph.setPanning(true);
+        graph.setTooltips(true);
+
+        // Liste des classes créées
+        const createdClasses = new Map();
+
+        const createUmlClass = (className, attributes, methods) => {
+    graph.getModel().beginUpdate();
+    try {
+        const vertex = graph.insertVertex(
+            umlParent,
+            null,
+            `${className}\n${attributes.join('\n')}\n${methods.join('\n')}`,
+            100,
+            100,
+            150,
+            100,
+            'shape=rectangle;fillColor=lightblue;strokeColor=black;'
+        );
+        // Ajoute explicitement le nom de la classe dans le Map
+        createdClasses.set(className, { vertex, className, attributes, methods, parents: [] });
+    } finally {
+        graph.getModel().endUpdate();
+    }
+
+            document.getElementById("class-name").value = "";
+            document.getElementById("attributes-container").innerHTML = "";
+            document.getElementById("methods-container").innerHTML = "";
+        };
+
+        createdClasses.forEach(({ className, attributes, methods }) => {
+    generatedCode += `public class ${className} {\n`;
+
+    attributes.forEach(attr => {
+        generatedCode += `    private ${attr};\n`;
+    });
+
+    methods.forEach(method => {
+        generatedCode += `    public void ${method}() {\n        // TODO: Implémenter ${method}\n    }\n\n`;
+    });
+
+    generatedCode += `}\n\n`;
+});
+
+
+        const addRelation = (type, source, target, isNavigable) => {
+            const edgeStyle = {
+                AssociationSimple: 'edgeStyle=orthogonalEdgeStyle;strokeColor=black;endArrow=none;',
+                Association: 'edgeStyle=orthogonalEdgeStyle;strokeColor=black;endArrow=blockThin;endFill=1;',
+                Agrégation: 'edgeStyle=orthogonalEdgeStyle;strokeColor=black;endArrow=diamond;endFill=0;',
+                Composition: 'edgeStyle=orthogonalEdgeStyle;strokeColor=black;endArrow=diamond;endFill=1;',
+                Héritage: 'edgeStyle=orthogonalEdgeStyle;strokeColor=black;endArrow=block;endFill=1;',
+            };
+
+            const relationStyle = isNavigable ? edgeStyle.Association : edgeStyle.AssociationSimple;
+
+            graph.getModel().beginUpdate();
+            try {
+                graph.insertEdge(umlParent, null, '', source, target, relationStyle);
+            } finally {
+                graph.getModel().endUpdate();
+            }
+
+            document.getElementById("class-name").value = "";
+            document.getElementById("attributes-container").innerHTML = "";
+            document.getElementById("methods-container").innerHTML = "";
+        };
+
+
+
+graph.addListener(mxEvent.DOUBLE_CLICK, function (sender, evt) {
+    const cell = evt.getProperty("cell");
+    
+    if (graph.getModel().isEdge(cell)) {
+        // Si la cellule est une association (edge), afficher la boîte de saisie pour les cardinalités
+        const cardinalityStart = prompt("Entrez la cardinalité de départ (ex: 0..1):");
+        const cardinalityEnd = prompt("Entrez la cardinalité de fin (ex: 1..*):");
+
+        if (cardinalityStart && cardinalityEnd) {
+            // Ajouter les cardinalités aux libellés de l'association
+            graph.getModel().beginUpdate();
+            try {
+                const label = `${cardinalityStart} ${cardinalityEnd}`;
+                graph.getModel().setValue(cell, label);  // Met à jour le label de l'association avec les cardinalités
+            } finally {
+                graph.getModel().endUpdate();
+            }
+        }
+    }
+});
+
+
+    // Gestion des événements
+    document.querySelector("[data-type='Classe']").addEventListener("click", () => {
+        const className = document.getElementById("class-name").value.trim();
+        if (!className) {
+            alert("Veuillez entrer un nom pour la classe.");
+            return;
+        }
+
+        const attributes = Array.from(document.querySelectorAll("#attributes-container .attribute-item"))
+            .map(attr => `${attr.querySelector("select:nth-of-type(2)").value} ${attr.querySelector("select:nth-of-type(1)").value} ${attr.querySelector("input[type='text']").value.trim()}`);
+        
+        const methods = Array.from(document.querySelectorAll("#methods-container .method-item"))
+            .map(method => `${method.querySelector("select:nth-of-type(2)").value} ${method.querySelector("select:nth-of-type(1)").value} ${method.querySelector("input[type='text']").value.trim()}()`);
+
+        createUmlClass(className, attributes, methods);
+    });
+
+  
+
+    document.querySelector("[data-type='Supprimer']").addEventListener("click", () => {
+        const cells = graph.getSelectionCells();
+        if (cells.length > 0) graph.removeCells(cells);
+        else alert("Aucun élément sélectionné !");
+    });
+
+    document.querySelector("[data-type='Association']").addEventListener("click", () => {
+    const [source, target] = graph.getSelectionCells();
+    if (source && target) {
+        // Ajouter une association avec navigabilité
+        addRelation('Association', source, target, true); 
+    } else {
+        alert("Veuillez sélectionner deux éléments UML.");
+    }
+});
+
+document.querySelector("[data-type='AssociationSimple']").addEventListener("click", () => {
+    const [source, target] = graph.getSelectionCells();
+    if (source && target) {
+        // Ajouter une association sans navigabilité
+        addRelation('Association', source, target, false); // false signifie sans navigabilité
+    } else {
+        alert("Veuillez sélectionner deux éléments UML.");
+    }
+});
+
+document.querySelector("[data-type='Héritage']").addEventListener("click", () => {
+                const childClassName = prompt("Entrez le nom de la classe enfant :");
+                const parentClassName = prompt("Entrez le nom de la classe parente :");
+
+                const child = createdClasses.get(childClassName);
+                const parent = createdClasses.get(parentClassName);
+
+                if (child && parent) {
+                    graph.getModel().beginUpdate();
+                    try {
+                        graph.insertEdge(umlParent, null, '', child.vertex, parent.vertex, 'endArrow=blockThin;strokeColor=black;');
+                        child.parents.push(parentClassName);
+                    } finally {
+                        graph.getModel().endUpdate();
+                    }
+                } else {
+                    alert("Une ou les deux classes spécifiées n'existent pas. Veuillez vérifier les noms et réessayer.");
+                }
+            });
+
+            document.querySelector("[data-type='Agrégation']").addEventListener("click", () => {
+                const className1 = prompt("Entrez le nom de la classe conteneur (agrégation) :");
+                const className2 = prompt("Entrez le nom de la classe qui est agrégée :");
+
+                const vertex1 = createdClasses.get(className1);
+                const vertex2 = createdClasses.get(className2);
+
+                if (vertex1 && vertex2) {
+                    graph.getModel().beginUpdate();
+                    try {
+                        graph.insertEdge(umlParent, null, '', vertex1.vertex, vertex2.vertex, 'endArrow=diamond;endFill=0;strokeColor=black;');
+                        vertex1.attributes.push(`List<${className2}> ${className2.toLowerCase()}s`);
+                    } finally {
+                        graph.getModel().endUpdate();
+                    }
+                } else {
+                    alert("Une ou les deux classes spécifiées n'existent pas. Veuillez vérifier les noms et réessayer.");
+                }
+            });
+
+            document.querySelector("[data-type='Composition']").addEventListener("click", () => {
+                const className1 = prompt("Entrez le nom de la première classe (le conteneur) pour la composition :");
+                const className2 = prompt("Entrez le nom de la deuxième classe (qui est contenue) :");
+
+                const vertex1 = createdClasses.get(className1);
+                const vertex2 = createdClasses.get(className2);
+
+                if (vertex1 && vertex2) {
+                    graph.getModel().beginUpdate();
+                    try {
+                        graph.insertEdge(umlParent, null, '', vertex1.vertex, vertex2.vertex, 'endArrow=diamondThin;endFill=1;strokeColor=black;');
+                    } finally {
+                        graph.getModel().endUpdate();
+                    }
+                } else {
+                    alert("Une ou les deux classes spécifiées n'existent pas. Veuillez vérifier les noms et réessayer.");
+                }
+            });
+
+
+    // Exporter le diagramme en image
+    document.querySelector(".export-image-btn").addEventListener("click", () => {
+        html2canvas(container).then(canvas => {
+            const link = document.createElement("a");
+            link.href = canvas.toDataURL("image/png");
+            link.download = "uml-diagram.png";
+            link.click();
+        });
+    });
+
+    // Générer le code dans plusieurs langages
+    document.querySelector(".generate-code-btn").addEventListener("click", () => {
+    const languages = ["Java", "PHP", "Python"];
+    const language = prompt(`Choisissez un langage de programmation :\n${languages.join(', ')}`);
+    
+    if (!languages.includes(language)) {
+        alert("Langage non pris en charge.");
+        return;
+    }
+
+    let generatedCode = ''; 
+
+    // Assurez-vous que createdClasses est correctement peuplé
+    console.log(createdClasses); // Pour déboguer
+
+    createdClasses.forEach(({ className, attributes, methods, parents }) => {
+        // Gestion de l'héritage
+        if (parents.length > 0) {
+            generatedCode += `${language === "Java" ? "public" : ""} class ${className} extends ${parents.join(', ')} {\n`;
+        } else {
+            generatedCode += `${language === "Java" ? "public" : ""} class ${className} {\n`;
+        }
+
+        // Déterminer l'accès des attributs en fonction du langage
+        const accessModifier = language === "PHP" ? "private $" : "private";
+
+        // Ajout des attributs
+        attributes.forEach(attr => {
+            generatedCode += `    ${accessModifier} ${attr};\n`; 
+        });
+
+        generatedCode += '\n';
+
+        // Ajout des méthodes
+        methods.forEach(method => {
+            generatedCode += `    ${language === "PHP" ? "public function" : "public void"} ${method}() {\n        // TODO: Implement ${method}\n    }\n\n`;
+        });
+
+        generatedCode += `}\n\n`;
+    });
+
+    // Affichage du code généré dans l'élément 'code-output'
+    document.getElementById("code-output").textContent = generatedCode;
+});
+
+
+</script>
+
+</body>
+</html>

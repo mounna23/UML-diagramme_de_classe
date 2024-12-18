@@ -1,0 +1,180 @@
+/* Style général */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Structure de l'application */
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Style des panneaux latéraux */
+.sidebar {
+    width: 20%;
+    background-color: #f3f4f6;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+
+.left-sidebar {
+    border-right: 1px solid #ddd;
+}
+
+.right-sidebar {
+    border-left: 1px solid #ddd;
+}
+
+.sidebar h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+/* Boutons des éléments UML */
+.uml-element {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.uml-element:hover {
+    background-color: #357ab7;
+}
+
+/* Zone de diagramme */
+.diagram-container {
+    flex: 1;
+    padding: 20px;
+    position: relative;
+}
+
+#uml-canvas {
+    width: 100%;
+    height: calc(100% - 40px);
+    border: 2px dashed #bbb;
+    border-radius: 4px;
+    background-color: #ffffff;
+}
+
+/* Propriétés de la classe */
+.properties label {
+    display: block;
+    font-weight: bold;
+    margin: 10px 0 5px;
+}
+
+.properties input,
+.properties textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.save-btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.save-btn:hover {
+    background-color: #218838;
+}
+.uml-class {
+    position: absolute;
+    width: 150px;
+    padding: 10px;
+    background-color: #f3f3f3;
+    border: 1px solid #333;
+    border-radius: 5px;
+    cursor: move;
+}
+
+.uml-class strong {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.uml-class div {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.generate-code-btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Boutons des propriétés, similaires à "Générer le Code" */
+
+.properties button,
+.properties .save-btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%; /* Pour occuper toute la largeur disponible */
+    margin-bottom: 10px; /* Espacement entre les boutons */
+}
+
+.properties button:hover,
+.properties .save-btn:hover {
+    background-color: #218838;
+}
+
+/* Boutons "Ajouter attribut" et "Ajouter méthode" */
+.add-attribute-btn,
+.add-method-btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.add-attribute-btn:hover,
+.add-method-btn:hover {
+    background-color: #218838;
+}
+
+/* Boutons "Générer le Code" et "Exporter l'image" */
+.generate-code-btn,
+.export-image-btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.generate-code-btn:hover,
+.export-image-btn:hover {
+    background-color: #218838;
+}
